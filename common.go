@@ -96,6 +96,7 @@ const (
 	extensionKeyShare                uint16 = 51
 	extensionNextProtoNeg            uint16 = 13172 // not IANA assigned
 	extensionRenegotiationInfo       uint16 = 0xff01
+	extensionApplicationSettings     uint16 = 0x4469
 )
 
 // TLS signaling cipher suite values

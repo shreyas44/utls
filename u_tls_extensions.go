@@ -1,7 +1,4 @@
-// Copyright 2017 Google Inc. All rights reserved.
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
-
+// Copyright 2017 Google Inc. All rights reserved. Use of this source code is governed by a BSD-style license that can be found in the LICENSE file.
 package tls
 
 import (
@@ -719,6 +716,48 @@ func (e *CookieExtension) Read(b []byte) (int, error) {
 	if len(e.Cookie) > 0 {
 		copy(b[4:], e.Cookie)
 	}
+	return e.Len(), io.EOF
+}
+
+type ApplicationSettingsExtension struct {
+	SupportedALPNList []string
+}
+
+func (e *ApplicationSettingsExtension) writeToUConn(uc *UConn) error {
+	return nil
+}
+
+func (e *ApplicationSettingsExtension) Len() int {
+	result := 6 //id + first length + second length
+	for _, element := range e.SupportedALPNList {
+		result += 1 + len(element) //byte for string length + allocation for string in bytes
+	}
+	return result
+}
+
+func (e *ApplicationSettingsExtension) Read(b []byte) (int, error) {
+	if len(b) < e.Len() {
+		return 0, io.ErrShortBuffer
+	}
+
+	b[0] = byte(extensionApplicationSettings >> 8)
+	b[1] = byte(0x69)
+	currentIndex := 6
+
+	for _, alpn := range e.SupportedALPNList {
+		b[currentIndex] = byte(len(alpn)) //set length of string in bytes
+		currentIndex++
+		for _, char := range alpn {
+			b[currentIndex] = byte(char) //convert char to byte
+			currentIndex++
+		}
+	}
+
+	b[2] = 0x00
+	b[3] = byte(e.Len() - 4) //len minus id and itself (2+2)
+	b[4] = 0x00
+	b[5] = byte(e.Len() - 6) //len minus id big length and itself 5 (2+2+2)
+
 	return e.Len(), io.EOF
 }
 
